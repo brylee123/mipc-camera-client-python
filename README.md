@@ -146,3 +146,17 @@ On the tested f300, p0 decoded at 1920×1080. Both p1 (advertised D1) and p2
 for a p1 request. The Windows client sends these same tokens but contains static
 resolution assumptions. Do not convert its labels into assumed frame sizes.
 Selecting a profile changes playback negotiation, not the camera encoder settings.
+
+## Clear device controls
+
+The [device settings reference](docs/API.md#explicit-device-settings) covers
+credential-free interface/IP/MAC views, camera-advertised timezones, OSD weekday /
+calendar date / clock time and formats, MIPC power frequency, explicit SD recording
+modes and separate motion-action/global-arming controls. All changes stay at the
+configured camera host and preserve unrelated document fields. Restart and factory
+reset are explicit maintenance calls; factory reset has not been live-tested.
+
+**Continuous recording** means all-day recording to the camera's local SD storage.
+**Scheduled recording** uses configured time windows. **Recording box** APIs address
+separate MIPC storage hardware. The compatibility method `set_recording_enabled`
+only enables the existing SD task; use `set_recording_mode` to choose the mode.

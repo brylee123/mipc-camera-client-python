@@ -150,7 +150,7 @@ Selecting a profile changes playback negotiation, not the camera encoder setting
 ## Clear device controls
 
 The [device settings reference](docs/API.md#explicit-device-settings) covers
-credential-free interface/IP/MAC views, camera-advertised timezones, OSD weekday /
+credential-free interface/IP/MAC views, camera-advertised timezone metadata, OSD weekday /
 calendar date / clock time and formats, MIPC power frequency, explicit SD recording
 modes and separate motion-action/global-arming controls. All changes stay at the
 configured camera host and preserve unrelated document fields. Restart and factory
@@ -160,3 +160,8 @@ reset are explicit maintenance calls; factory reset has not been live-tested.
 **Scheduled recording** uses configured time windows. **Recording box** APIs address
 separate MIPC storage hardware. The compatibility method `set_recording_enabled`
 only enables the existing SD task; use `set_recording_mode` to choose the mode.
+
+Timezone editing remains an open hardware issue: the tested f300 can acknowledge
+an update while shifting its clock incorrectly. The library reports the setting
+and advertised UTC offsets; it does not claim a safe timezone-only setter. The
+camera's original local clock and settings were restored after this investigation.

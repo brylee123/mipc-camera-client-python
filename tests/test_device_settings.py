@@ -140,36 +140,21 @@ def test_motion_boolean_and_frequency_validation(client):
             client.set_power_frequency(value)
 
 
-def test_timezone_uses_advertised_ids_and_omits_cached_clock_for_ntp(client):
-    client.get_timezones = Mock(return_value=("London",))
-    client.get_ntp = Mock(return_value={"auto_sync_enable": 1})
-    client.set_timezone("London")
-    client.call.assert_called_once_with("ccm_date_set", type="NTP", timezone="London")
-    with pytest.raises(ValueError):
-        client.set_timezone("America/New_York")
-    assert client.call.call_count == 1
-
-
-def test_manual_timezone_reads_fresh_clock(client):
-    client.get_timezones = Mock(return_value=("London",))
-    client.get_ntp = Mock(return_value={"auto_sync_enable": 0})
-    clock = {"date": {"year": 2026}, "time": {"hour": 12}}
-    client.get_date = Mock(return_value=clock)
-    client.set_date = Mock()
-    client.set_timezone("London")
-    client.set_date.assert_called_once_with(clock, type="manually", timezone="London")
-
-
 def test_timezone_discovery_rejects_bad_shape(client):
     client.get_device_sn = Mock(return_value="synthetic")
     client.get_zone = Mock(
         return_value={
             "address": {
-                "zones": [{"city": "London"}, {}, {"city": "London"}, {"city": "China"}]
+                "zones": [
+                    {"utc": "UTC+00:00"},
+                    {},
+                    {"utc": "UTC+00:00"},
+                    {"utc": "UTC+08:00"},
+                ]
             }
         }
     )
-    assert client.get_timezones() == ("London", "China")
+    assert client.get_timezones() == ("UTC+00:00", "UTC+08:00")
     client.get_zone.return_value = {}
     with pytest.raises(MipcProtocolError):
         client.get_timezones()

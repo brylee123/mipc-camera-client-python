@@ -383,13 +383,15 @@ callback must bound network/decode time; no encoder configuration is changed.
   uses enum 0 for 60 Hz and 1 for 50 Hz. Its Vimtag OEM UI reverses the displayed
   order; cross-model/OEM behavior still needs validation. `update_misc(power_freq=...)`
   remains the raw enum API. Verified both enum readbacks on f300.
-- `get_timezones() -> tuple[str, ...]` returns IDs advertised by `ccm_zone_get`.
-  These are camera IDs such as `EST(US&Canada)`, not necessarily IANA names.
-- `set_timezone(zone)` validates against that list and preserves NTP configuration.
-  With automatic sync enabled it sends `ccm_date_set(type="NTP", timezone=zone)`
-  without a stale UTC payload. With automatic sync disabled it first reads fresh
-  camera UTC and sends it with `type="manually"`. The manual path has unit coverage;
-  live validation used automatic sync. No host clock is changed.
+- `get_timezones() -> tuple[str, ...]` returns unique advertised UTC offsets from
+  `ccm_zone_get.address.zones[].utc`, matching the extracted Windows UI option
+  values. City names and zoneinfo file paths are metadata, not proven setter IDs.
+  `get_ntp()["timezone"]` exposes the firmware's reported setting, which can still
+  contain a legacy city label.
+- No high-level timezone setter is offered: f300 tests found successful readback
+  could accompany an incorrect clock shift. `set_date` / `set_ntp` remain explicit
+  advanced APIs. Their raw calls are not a verified timezone-only workflow. Do
+  not replay a cached clock or assume `utc_date` behaves uniformly across firmware.
 - `get_recording_mode()` returns `off`, `continuous`, `scheduled`, or `None` for an
   unrecognized schema. `set_recording_mode(mode)` preserves task retention and
   schedule fields. Scheduled mode needs existing nonempty time windows. This is

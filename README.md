@@ -28,6 +28,8 @@ with MipcCameraClient("192.168.1.50:80", timeout=10) as camera:
 
 Construction does not contact anything. Login uses the existing MIPC DH/DES protocol at the supplied host. Each operation stays at that host, ignores environment proxies and .netrc, rejects HTTP redirects, and has a bounded timeout. There is no automatic login retry or cloud fallback. The legacy protocol uses HTTP and legacy cryptography; it does not provide modern transport security.
 
+The hardware-tested f300 uses its device serial as the local login name and its separate Device/Admin PW. For that model, use `camera.login(camera.get_device_sn(), device_password)`. MIPC cloud account credentials do not authenticate the local camera. Other firmware may use a different local username.
+
 ## Settings and controls
 
 ```python
@@ -114,6 +116,6 @@ poetry run ruff format --check mipc_camera_client tests tools
 poetry build
 ```
 
-Tests cover upstream crypto vectors, request encoding, all catalog device dispatch entries, conservative settings updates, auth/error handling, media host restrictions, queue lifecycle, and a real loopback HTTP camera simulator. They do not establish live camera compatibility. No camera was contacted during development.
+Tests cover upstream crypto vectors, request encoding, all catalog device dispatch entries, conservative settings updates, auth/error handling, media host restrictions, queue lifecycle, and a real loopback HTTP camera simulator. A read-only f300 hardware run also passed 30 checks, produced a valid 1920×1080 JPEG and decoded three local H.264/RTMP video frames. Speaker-list discovery returned HTTP 404 while direct speaker configuration remained readable; this is now reported as `MipcUnsupportedError`. See [hardware validation](docs/HARDWARE.md) for scope and limits. Settings writes and maintenance operations have not been hardware-tested.
 
 BSD-3-Clause. Original protocol implementation and attribution retained in [LICENSE](LICENSE).

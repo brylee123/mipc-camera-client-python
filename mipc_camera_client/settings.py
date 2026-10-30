@@ -29,17 +29,31 @@ class MipcTransportError(MipcError):
     """Network failure; query strings and credentials are excluded."""
 
 
+class MipcUnsupportedError(MipcError):
+    """The device HTTP interface does not implement the requested operation."""
+
+    def __init__(self, method: str, status_code: int) -> None:
+        self.status_code = status_code
+        super().__init__(method, f"http_{status_code}")
+
+
 class DeviceInfo(TypedDict, total=False):
     sn: str
     nick: str
     img_ver: str
     type: str
     p: list[dict[str, str]]
+    model: str
+    mfc: str
+    bimg_ver: str
+    wifi: str
+    os: str
+    sensor: str
 
 
 class AudioConfig(TypedDict, total=False):
     token: str
-    entity: str
+    entity: dict[str, Any] | str
     silent: int
     level: int
 

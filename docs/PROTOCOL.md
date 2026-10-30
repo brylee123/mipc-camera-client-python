@@ -110,7 +110,7 @@ Offsets below count Unicode characters in the decompressed UTF-8 bundle. Their p
 
 Five catalog entries are local authentication operations (DH, login, logout, session check, password change); four are account registration/binding/query/recovery operations. Authentication has dedicated methods. `call()` excludes both categories so device inputs cannot replace authentication/session material.
 
-* Client call-site evidence is not hardware validation. No camera credentials were supplied and no live camera was contacted.
+* Client call-site evidence is not hardware validation. A later f300 read-only test verified a subset of operations; see [HARDWARE.md](HARDWARE.md). The inventory does not imply support for every endpoint on every device.
 * Stream/playback/talk methods negotiate URLs only. RTMP/RTSP availability is firmware-dependent; no claim is made that every camera supports RTSP. Native plugin audio capture, encoding, playback, and clip export are not reimplemented. Event queues expose explicit synchronous polling, without a background listener.
 * Cloud login/registration/recovery/binding/device discovery are not required for direct local access and are not implemented. Gateway/box/external-device endpoints still require compatible hardware at the configured host.
 * Explicit NTP, firmware checks/downloads, alert actions and network settings can cause the camera itself to contact other hosts. The library cannot guarantee that firmware remains offline; use network rules if complete isolation is required.

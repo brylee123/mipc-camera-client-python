@@ -23,6 +23,7 @@ from .settings import (
     MipcError,
     MipcProtocolError,
     MipcTransportError,
+    MipcUnsupportedError,
     SettingsMixin,
 )
 from .sync import synchronized
@@ -37,6 +38,7 @@ __all__ = [
     "MipcAuthenticationError",
     "MipcProtocolError",
     "MipcTransportError",
+    "MipcUnsupportedError",
 ]
 
 
@@ -186,10 +188,17 @@ class MipcCameraClient(SettingsMixin, OperationsMixin):
                 timeout=timeout,
                 allow_redirects=False,
             )
-            resp.raise_for_status()
+        except requests.Timeout:
+            raise MipcTransportError(msg_type, "timeout") from None
         except requests.RequestException:
             # requests exceptions can contain credential-bearing query strings.
-            raise MipcTransportError(msg_type) from None
+            raise MipcTransportError(msg_type, "connection_error") from None
+        if resp.status_code in (404, 405, 501):
+            raise MipcUnsupportedError(msg_type, resp.status_code)
+        if resp.status_code in (401, 403):
+            raise MipcAuthenticationError(msg_type, f"http_{resp.status_code}")
+        if resp.status_code >= 400:
+            raise MipcTransportError(msg_type, f"http_{resp.status_code}")
         if 300 <= resp.status_code < 400:
             raise MipcProtocolError(msg_type)
         if response_type == "js":

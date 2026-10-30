@@ -14,6 +14,7 @@ from mipc_camera_client import (
     MipcCameraClient,
     MipcProtocolError,
     MipcTransportError,
+    MipcUnsupportedError,
 )
 from mipc_camera_client.crypto_helpers import (
     des_encrypt_password_hash,
@@ -37,6 +38,10 @@ def camera():
                 for k, v in parse_qs(parsed.query, keep_blank_values=True).items()
             }
             server.calls.append((method, query))
+            if server.http_status != 200:
+                self.send_response(server.http_status)
+                self.end_headers()
+                return
             if server.redirect:
                 self.send_response(302)
                 self.send_header("Location", "http://must-not-contact.invalid/")
@@ -91,6 +96,7 @@ def camera():
     server.calls = []
     server.level = 20
     server.redirect = False
+    server.http_status = 200
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     server.host = f"127.0.0.1:{server.server_port}"
@@ -132,6 +138,27 @@ def test_redirects_are_never_followed(camera):
     with MipcCameraClient(camera.host) as client:
         with pytest.raises(MipcProtocolError):
             client.get_info()
+    assert len(camera.calls) == 1
+
+
+@pytest.mark.parametrize(
+    "status,exception",
+    [
+        (404, MipcUnsupportedError),
+        (405, MipcUnsupportedError),
+        (501, MipcUnsupportedError),
+        (401, MipcAuthenticationError),
+        (403, MipcAuthenticationError),
+        (500, MipcTransportError),
+        (503, MipcTransportError),
+    ],
+)
+def test_http_failures_are_classified_without_retries(camera, status, exception):
+    camera.http_status = status
+    with MipcCameraClient(camera.host) as client:
+        with pytest.raises(exception) as error:
+            client.get_info()
+    assert error.value.code == f"http_{status}"
     assert len(camera.calls) == 1
 
 

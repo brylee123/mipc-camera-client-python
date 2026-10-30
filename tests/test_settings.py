@@ -51,6 +51,24 @@ def test_microphone_preserves_silent_and_extensions(client):
     assert payload["dforce_persistence"] == 1
 
 
+def test_microphone_preserves_entity_object_observed_on_f300(client):
+    conf = {
+        "entity": {"name": "Microphone", "use_counts": 1, "token": "mic0"},
+        "token": "mic0",
+        "silent": 0,
+        "level": 20,
+    }
+    client.run_rpc = Mock(
+        side_effect=[ack("ccm_mic_get", conf=[conf]), ack("ccm_mic_set")]
+    )
+    client.set_microphone_level(30)
+    payload = client.run_rpc.call_args.args[1]
+    assert payload["dconf_entity"] == 1
+    assert payload["dconf_entity_name"] == "Microphone"
+    assert payload["dconf_entity_use_counts"] == 1
+    assert payload["dconf_entity_token"] == "mic0"
+
+
 @pytest.mark.parametrize("bad", [-1, 101, True, 1.2, "50"])
 def test_invalid_level_never_calls_camera(client, bad):
     client.run_rpc = Mock()

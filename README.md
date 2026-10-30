@@ -2,14 +2,14 @@
 
 A Python client that talks directly to a MIPC-compatible camera or gateway at an address you provide. No Windows application, vendor JavaScript, native plugin, cloud account discovery, telemetry, or background service is included.
 
-This fork expands the original `pan-maruda/mipc-camera-client-python` library. The development branch is **0.2.0.dev0**, not a published PyPI release. The Windows client supplies protocol evidence; camera compatibility still needs hardware testing.
+This fork expands [Pan Maruda's original MIPC camera client](https://github.com/pan-maruda/mipc-camera-client-python). The current version is **0.2.0.dev0**, not a published PyPI release. The Windows client supplies protocol evidence; see [hardware validation](docs/HARDWARE.md) for tested camera support.
 
-## Install this review branch
+## Install from GitHub
 
 Python 3.10 or newer:
 
 ```shell
-python -m pip install "mipc-camera-client @ git+https://github.com/brylee123/mipc-camera-client-python.git@feature/typed-device-settings"
+python -m pip install "mipc-camera-client @ git+https://github.com/brylee123/mipc-camera-client-python.git@main"
 ```
 
 ## Basic use
@@ -118,4 +118,8 @@ poetry build
 
 Tests cover upstream crypto vectors, request encoding, all catalog device dispatch entries, conservative settings updates, auth/error handling, media host restrictions, queue lifecycle, and a real loopback HTTP camera simulator. A read-only f300 hardware run also passed 30 checks, produced a valid 1920×1080 JPEG and decoded three local H.264/RTMP video frames. Speaker-list discovery returned HTTP 404 while direct speaker configuration remained readable; this is now reported as `MipcUnsupportedError`. See [hardware validation](docs/HARDWARE.md) for scope and limits. Settings writes and maintenance operations have not been hardware-tested.
 
-BSD-3-Clause. Original protocol implementation and attribution retained in [LICENSE](LICENSE).
+## Credits and license
+
+The original library was created by [Pan Maruda (pan-maruda)](https://github.com/pan-maruda) in [mipc-camera-client-python](https://github.com/pan-maruda/mipc-camera-client-python). Their reverse-engineered local authentication, snapshot, streaming and pan/tilt implementation forms the foundation of this fork.
+
+This fork adds the expanded device API, protocol inventory and hardware validation. The original copyright notice and BSD-3-Clause license are preserved in [LICENSE](LICENSE).

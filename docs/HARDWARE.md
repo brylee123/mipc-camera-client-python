@@ -42,8 +42,8 @@ Date: 2026-10-30. Camera: f300; firmware: `v5.1.10.1811061306`. The camera was i
 
 ## Media verification
 
-* Snapshot: a valid JPEG was decoded/verified in memory at 1920×1080. No image was saved or published.
-* Streaming: the library negotiated an RTMP URL naming the configured camera. An external PyAV decoder opened that URL and decoded three H.264 video frames at 1920×1080. PyAV is a test tool, not a library dependency.
+* Snapshot: a valid JPEG was decoded/verified in memory at 1920Ã—1080. No image was saved or published.
+* Streaming: the library negotiated an RTMP URL naming the configured camera. An external PyAV decoder opened that URL and decoded three H.264 video frames at 1920Ã—1080. PyAV is a test tool, not a library dependency.
 * No stream URLs, credentials, session tokens, device serials, MAC addresses, network configuration values, video frames or audio recordings are included in this report.
 
 ## Device-specific findings
@@ -53,8 +53,20 @@ Date: 2026-10-30. Camera: f300; firmware: `v5.1.10.1811061306`. The camera was i
 * The local device username is its serial. MIPC cloud account credentials are separate from the device credentials and do not authenticate this local interface.
 * Queue creation, subscription, a two-second empty poll and queue destruction succeeded. No events were received during that poll; actual motion-event delivery has not been demonstrated.
 
+## Follow-up settings, motor and Home Assistant validation
+
+Later on 2026-10-30, the same f300 and firmware were exercised through the standalone [Home Assistant integration](https://github.com/brylee123/ha-mipc-camera), temporarily bundling this library at commit `1a6e1cf6a7648247481d270105ae753df527ca31`.
+
+- All 16 exposed settings accepted writes of their original values and read back unchanged: four image levels, speaker and microphone levels, two motion sensitivity levels, image flip, microphone mute, OSD text/date/time toggles and text content, recording schedule enabled, and day/night mode. Brightness was additionally changed by one unit, read back, then restored. This verifies those write paths on this firmware, not persistence after a reboot or every possible setting value.
+- **Physical pan and tilt both work.** A small pan command shifted a private snapshot horizontally about 40 pixels, and a small tilt command shifted it vertically about 11 pixels. Inverse commands returned the view within approximately two pixels. The snapshots were kept local; no camera frames are included here. Motor inputs are relative device units, not independently calibrated degrees. Home Assistant's four motor buttons were also exercised with inverse moves.
+- The SD slot reported `stat="empty"`, `size=0`, and `used_size=0`. A consumer must not divide by zero or interpret this as 0% of a usable card. Raw storage size units remain unverified. Actual recording to storage was not tested without media.
+- Home Assistant 2026.10.4 retrieved a valid 1920×1080 JPEG and generated HLS media from the local RTMP source; a frame from the resulting HLS segment decoded at 1920×1080.
+- All 26 integration entities had healthy states, with the nonexistent storage-usage percentage omitted. Credential redaction and unload/reload reconnection passed. The final integration acceptance run passed 32 checks after correcting two integration issues: debounced setting read-back and the empty-slot percentage sensor. These fixes belong in the Home Assistant adapter, not the camera protocol library.
+
+The test returned changed brightness and motor position to their starting values. Recording and audio settings were written with their existing values; recording was not deliberately interrupted and no talk audio was transmitted.
+
 ## Still unverified
 
-Settings writes and read/modify/write persistence; PTZ/physical movement; storage maintenance; firmware updates; reboot/restore; password changes; pairing/external accessories; gateway/box operations; recorded-video playback; talk audio upload; RTSP; and compatibility with other models or firmware. Readable cruise/schedule/scene documents do not establish support for their associated actions.
+Settings persistence across power cycles; broad setting-value combinations; storage maintenance; firmware updates; reboot/restore; password changes; pairing/external accessories; gateway/box operations; actual recording to media and recorded-video playback; talk audio upload; RTSP; and compatibility with other models or firmware. Readable cruise/schedule/scene documents do not establish support for their associated actions.
 
-The test checked direct local operation. It did not establish that the camera firmware makes no independent external connections. The Windows application was used for identifying the device and reading connection details; library RPCs and media decoding targeted the local camera.
+The tests checked direct local operation. They did not establish that the camera firmware makes no independent external connections. The Windows application was used for identifying the device and reading connection details; library RPCs and media decoding targeted the local camera.

@@ -495,7 +495,12 @@ class OperationsMixin:
         type: str | int | None = None,
         daylight_savings: int | None = None,
     ) -> None:
-        """Send the camera's structured UTC date/time, without host clock changes."""
+        """Send the structured clock document named utc_date on the wire.
+
+        Firmware timezone/NTP behavior is not uniform. This is an explicit raw
+        clock-setting operation, not a verified timezone-only workflow. It never
+        changes the host computer's clock.
+        """
         if not isinstance(utc_date, dict) or not {"date", "time"} <= utc_date.keys():
             raise ValueError("Expected structured date and time")
         self.call(

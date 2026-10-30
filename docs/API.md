@@ -260,7 +260,7 @@ Explicit operation; see the protocol inventory for request fields.
 
 ### `set_date(self, utc_date: 'dict', *, timezone: 'str | int | None' = None, type: 'str | int | None' = None, daylight_savings: 'int | None' = None) -> 'None'`
 
-Send the camera's structured UTC date/time, without host clock changes.
+Send the structured camera clock document named `utc_date` on the wire. Firmware timezone/NTP behavior varies; this is an explicit raw clock-setting operation, not a verified timezone-only workflow. It never changes the host computer's clock.
 
 ### `set_flip(self, enabled: bool) -> None`
 

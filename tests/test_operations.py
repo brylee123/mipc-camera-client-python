@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -27,6 +27,42 @@ def ack(method, **data):
         "type": method.removesuffix("_req") + "_ack",
         "data": {"ret": {"code": ""}, "result": "", **data},
     }
+
+
+def test_alert_actions_updates_each_token_as_object_before_arming(client):
+    actions = [{"token": "motion", "enable": 1}, {"token": "input", "enable": 0}]
+    client.call = Mock()
+    client.set_alert_actions(enabled=True, actions=actions)
+    assert client.call.call_args_list == [
+        call("ccm_alert_action_set", actions=actions[0]),
+        call("ccm_alert_action_set", actions=actions[1]),
+        call("ccm_alert_action_set", enable=True),
+    ]
+
+
+def test_alert_actions_empty_list_only_changes_arming(client):
+    client.call = Mock()
+    client.set_alert_actions(enabled=False, actions=[])
+    client.call.assert_called_once_with("ccm_alert_action_set", enable=False)
+
+
+@pytest.mark.parametrize(
+    "actions", [[{}], [{"token": ""}], [{"token": 7}], [{"token": "valid"}, {}]]
+)
+def test_alert_actions_validates_all_tokens_before_any_write(client, actions):
+    client.call = Mock()
+    with pytest.raises(ValueError):
+        client.set_alert_actions(enabled=True, actions=actions)
+    client.call.assert_not_called()
+
+
+def test_alert_actions_stops_on_partial_failure_without_replay_or_arming(client):
+    actions = [{"token": "first"}, {"token": "second"}, {"token": "third"}]
+    client.call = Mock(side_effect=[{}, MipcError("ccm_alert_action_set")])
+    with pytest.raises(MipcError):
+        client.set_alert_actions(enabled=True, actions=actions)
+    assert client.call.call_count == 2
+    assert client.call.call_args.kwargs == {"actions": actions[1]}
 
 
 @pytest.mark.parametrize(

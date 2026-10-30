@@ -102,3 +102,48 @@ def test_queue_does_not_start_without_login(client):
     with pytest.raises(MipcProtocolError):
         client.event_queue()
     client.run_rpc.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"type": "device"},
+        {"code": "io_alert"},
+        {"sn": ""},
+        {"msg_id": True},
+        {"msg_id": 0},
+        {"date": "1793376813"},
+        {"date": -1},
+        {"sn": None},
+    ],
+)
+def test_motion_parser_rejects_other_or_malformed_events(patch):
+    from mipc_camera_client.events import MotionEvent
+
+    item = {
+        "type": "alert",
+        "code": "motion_alert",
+        "sn": "synthetic",
+        "msg_id": 7,
+        "date": 1793376813,
+    }
+    item.update(patch)
+    assert MotionEvent.from_message(item) is None
+
+
+def test_motion_parser_uses_verified_pulse_schema_without_executing_content():
+    from mipc_camera_client.events import MotionEvent
+
+    item = {
+        "type": "alert",
+        "code": "motion_alert",
+        "sn": "private-serial",
+        "msg_id": 7,
+        "date": 1793376813,
+        "p": [{"n": "msg_id", "v": "7"}, {"n": "content", "v": "untrusted text"}],
+    }
+    event = MotionEvent.from_message(item)
+    assert event.message_id == 7 and event.timestamp == 1793376813
+    assert event.serial_number == "private-serial"
+    assert "private-serial" not in repr(event)
+    assert MotionEvent.from_message(None) is None

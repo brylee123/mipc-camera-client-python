@@ -68,10 +68,15 @@ Probing is opt-in and issues only the selected reads. A rejected read can mean m
 ```python
 with camera.event_queue() as events:
     for item in events.poll(timeout=5):
-        print(item)
+        from mipc_camera_client.events import MotionEvent
+        event = MotionEvent.from_message(item)
+        if event is not None:
+            print(event)  # Does not print the device serial.
 ```
 
-Queues use the observed `mmq_create`, `ccm_subscribe`, `mmq_pick`, and `mmq_destroy` flow. Wire timeouts are milliseconds; Python timeouts are seconds. Polling is synchronous and blocks other operations on the same client. Use a separately logged-in client when you need simultaneous controls. The library starts no threads and does not reconnect silently. Event delivery and queue lifetime behavior still require camera testing.
+Queues use the observed `mmq_create`, `ccm_subscribe`, `mmq_pick`, and `mmq_destroy` flow. Wire timeouts are milliseconds; Python timeouts are seconds. Polling is synchronous and blocks other operations on the same client. Use a separately logged-in client when you need simultaneous controls. The library starts no threads and does not reconnect silently. Local `alert` / `motion_alert` pulses have been received from an f300 while panning changed its view. No motion-clear event was observed. Polls can time out even after successful delivery; callers must close the old queue/session and reconnect with backoff. A timeout must not be interpreted as a motion-clear state. Physical movement still needs a separate validation.
+
+The camera must have its motion alarm armed. Reading/subscribing does not change alarm actions. `set_alert_actions()` updates one token at a time; inspect existing IO, snapshot and recording actions before arming.
 
 ## Advanced endpoints
 

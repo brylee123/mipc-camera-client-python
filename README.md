@@ -30,6 +30,40 @@ Construction does not contact anything. Login uses the existing MIPC DH/DES prot
 
 The hardware-tested f300 uses its device serial as the local login name and its separate Device/Admin PW. For that model, use `camera.login(camera.get_device_sn(), device_password)`. MIPC cloud account credentials do not authenticate the local camera. Other firmware may use a different local username.
 
+## Security: keep camera traffic local
+
+For better privacy, block the camera's internet access at your router or firewall
+while allowing your local client to reach it. The library uses the configured
+camera host, but it cannot prevent the camera firmware from independently
+contacting vendor services. Network restrictions reduce that exposure; they do
+not make the camera firmware trusted.
+
+1. Reserve the camera's LAN address in your router's DHCP settings.
+2. Deny the camera's outbound internet (WAN) traffic across all protocols and
+   ports, covering **both IPv4 and IPv6** if enabled. Blocking DNS or vendor
+   domains alone is insufficient.
+3. Preserve local access from your client or Home Assistant to the camera's
+   control and media services, including return traffic. A generic **Block device**
+   option or guest-network isolation may also block LAN access. With a separate
+   camera/IoT network, allow the required traffic between networks explicitly.
+4. Restrict every connected interface: Ethernet and Wi-Fi can both be active with
+   different addresses. Block both or disconnect the unused interface. Do not
+   forward camera ports from the internet; remove existing camera port forwards
+   or UPnP mappings.
+5. Verify enforcement of the WAN block, restart the camera, and check local
+   snapshots, streaming, controls and events on your model.
+
+Vendor cloud viewing, notifications, updates and internet time synchronization
+may stop working. A trusted local time server can be used where supported, with
+the necessary local access allowed. Keep the camera clock correct when consuming
+timestamped events. Your client computer or Home Assistant can retain internet
+access for dependency installation and updates.
+
+Local operations have been tested, but hardware validation with camera WAN access
+blocked is **still outstanding**. The camera protocol uses HTTP and legacy
+cryptography; limit LAN access to trusted devices, ideally using a separate
+camera/IoT network. Internet blocking does not add transport encryption.
+
 ## Settings and controls
 
 ```python

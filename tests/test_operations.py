@@ -182,6 +182,7 @@ def test_network_does_not_scan_by_default(client):
         "accounts.nid.invalid",
         "accounts.lid.invalid",
         "ccms.session.invalid",
+        "InvalidSession",
     ],
 )
 def test_observed_expired_session_codes(client, sub):
@@ -194,6 +195,31 @@ def test_observed_expired_session_codes(client, sub):
     with pytest.raises(MipcAuthenticationError):
         client.get_misc()
     assert client.run_rpc.call_count == 1  # No hidden retries or writes.
+
+
+def test_live_f300_invalid_session_response_never_replays_writes(client):
+    client.run_rpc = Mock(
+        return_value={
+            "type": "ccm_misc_set_ack",
+            "data": {"ret": {"code": "Receiver", "sub": "InvalidSession"}},
+        }
+    )
+    with pytest.raises(MipcAuthenticationError) as error:
+        client.call("ccm_misc_set", info={"flip": 1})
+    assert error.value.code == "Receiver"
+    client.run_rpc.assert_called_once()
+
+
+def test_other_receiver_errors_remain_device_errors(client):
+    client.run_rpc = Mock(
+        return_value={
+            "type": "ccm_misc_get_ack",
+            "data": {"ret": {"code": "Receiver", "sub": "ccm.system.err"}},
+        }
+    )
+    with pytest.raises(MipcError) as error:
+        client.get_misc()
+    assert not isinstance(error.value, MipcAuthenticationError)
 
 
 @pytest.mark.parametrize(

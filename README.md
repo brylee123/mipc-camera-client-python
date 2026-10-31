@@ -1,4 +1,4 @@
-# MIPC camera client — local control
+# MIPC camera client â€” local control
 
 A Python client that talks directly to a MIPC-compatible camera or gateway at an address you provide. No Windows application, vendor JavaScript, native plugin, cloud account discovery, telemetry, or background service is included.
 
@@ -35,7 +35,7 @@ The hardware-tested f300 uses its device serial as the local login name and its 
 ```python
 # After login; call only the settings your hardware supports.
 print(camera.get_microphone_inputs())
-print(camera.get_speaker_outputs())
+print(camera.get_speaker())  # Direct configuration; list discovery is unsupported on f300.
 print(camera.get_imaging())
 camera.update_imaging(brightness=55, mode="auto")
 camera.set_microphone_level(60)
@@ -116,7 +116,7 @@ poetry run ruff format --check mipc_camera_client tests tools
 poetry build
 ```
 
-Tests cover upstream crypto vectors, request encoding, all catalog device dispatch entries, conservative settings updates, auth/error handling, media host restrictions, queue lifecycle, and a real loopback HTTP camera simulator. A read-only f300 hardware run also passed 30 checks, produced a valid 1920×1080 JPEG and decoded three local H.264/RTMP video frames. Speaker-list discovery returned HTTP 404 while direct speaker configuration remained readable; this is now reported as `MipcUnsupportedError`. See [hardware validation](docs/HARDWARE.md) for scope and limits. Settings writes and maintenance operations have not been hardware-tested.
+Tests cover upstream crypto vectors, request encoding, all catalog device dispatch entries, conservative settings updates, auth/error handling, media host restrictions, queue lifecycle, and a real loopback HTTP camera simulator. A read-only f300 hardware run also passed 30 checks, produced a valid 1920Ã—1080 JPEG and decoded three local H.264/RTMP video frames. Speaker-list discovery returned HTTP 404 while direct speaker configuration remained readable; this is now reported as `MipcUnsupportedError`. See [hardware validation](docs/HARDWARE.md) for scope and limits. Follow-up tests verified 16 settings write/read-back paths, a reversible brightness change, both physical motors, and Home Assistant snapshot/HLS consumption. Persistence across a reboot, actual recording without an SD card, and maintenance operations remain unverified.
 
 ## Credits and license
 

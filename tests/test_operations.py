@@ -222,6 +222,40 @@ def test_other_receiver_errors_remain_device_errors(client):
     assert not isinstance(error.value, MipcAuthenticationError)
 
 
+def test_snapshot_xml_invalid_session_is_auth_failure(client):
+    client.run_rpc = Mock(
+        return_value=(
+            b"<message><type>ccm_pic_get_ack</type><data><ccm_pic_get_ack>"
+            b"<ret><code>Receiver</code><sub>InvalidSession</sub></ret>"
+            b"</ccm_pic_get_ack></data></message>"
+        )
+    )
+    with pytest.raises(MipcAuthenticationError):
+        client.get_image()
+    client.run_rpc.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"not an image",
+        b"<message>",
+        b"<message><type>wrong_ack</type><data><ccm_pic_get_ack><ret><code>Receiver</code><sub>InvalidSession</sub></ret></ccm_pic_get_ack></data></message>",
+        b"<message><type>ccm_pic_get_ack</type><data><ccm_pic_get_ack><ret><code></code></ret></ccm_pic_get_ack></data></message>",
+        b'<!DOCTYPE message [<!ENTITY x "InvalidSession">]><message>&x;</message>',
+        b" " * 65537,
+        '<!DOCTYPE message [<!ENTITY x "InvalidSession">]><message>&x;</message>'.encode(
+            "utf-16"
+        ),
+        b'<message encoding="unrecognized-charset"></message>',
+    ],
+)
+def test_non_jpeg_snapshot_does_not_become_success_or_auth_retry(client, body):
+    client.run_rpc = Mock(return_value=body)
+    with pytest.raises(MipcProtocolError):
+        client.get_image()
+
+
 @pytest.mark.parametrize(
     "url",
     [

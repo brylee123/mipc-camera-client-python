@@ -26,7 +26,7 @@ jobs:
     - name: install dependencies
       run: |
         pip install poetry
-        poetry install --with=dev
+        poetry install --with=dev --extras audio
     - name: test
       run: |
         poetry run ruff check mipc_camera_client tests tools

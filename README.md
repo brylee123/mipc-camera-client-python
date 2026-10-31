@@ -114,7 +114,7 @@ The camera must have its motion alarm armed. Reading/subscribing does not change
 
 ## Advanced endpoints
 
-The data-only [protocol inventory](docs/PROTOCOL.md) records **81 observed RPCs: 72 device/queue operations, 5 authentication operations, and 4 account operations**. It includes bundle hashes, call-site offsets, observed field names, and request shapes in `mipc_camera_client/endpoints.json`. No vendor bundle or cached camera/account payload is shipped.
+The data-only [protocol inventory](docs/PROTOCOL.md) records **89 observed RPCs: 80 device/queue operations, 5 authentication operations, and 4 account operations**. It includes bundle hashes, call-site offsets, observed field names, and request shapes in `mipc_camera_client/endpoints.json`. No vendor bundle or cached camera/account payload is shipped.
 
 ```python
 # Structured Python input; session IDs and MIPC's HTTP encoding are added.
@@ -125,7 +125,7 @@ print(camera.call("ccm_msg_get", flag=0, start=0, counts=20, filter="record"))
 
 Maintenance operations execute when explicitly called. `reboot()`, `restore()`, `control_storage("format")`, `set_network()`, and password changes can disrupt the device or erase data. Nothing calls them automatically. Firmware checks/downloads, NTP, alert actions and network configuration may cause the **camera firmware** to contact other hosts; the library itself does not follow those hosts. Complete offline isolation requires camera network restrictions.
 
-Stream, playback and talk methods negotiate URLs; they do not implement a player or the native plugin's audio encoding/upload pipeline. Returned media URLs must match the configured camera hostname unless `allow_remote=True` is explicitly requested. RTMP/RTSP support depends on firmware. Native plugin clip export and full Windows UI parity are not claimed.
+Stream, playback and `get_talk_url()` methods negotiate URLs. The optional `send_audio()` method implements bounded local AAC speaker uploads; it does not capture a microphone or embed a player. Returned media URLs must match the configured camera hostname unless `allow_remote=True` is explicitly requested. RTMP/RTSP support depends on firmware. Native plugin clip export and full Windows UI parity are not claimed.
 
 ## Command line
 
@@ -199,3 +199,36 @@ Timezone editing remains an open hardware issue: the tested f300 can acknowledge
 an update while shifting its clock incorrectly. The library reports the setting
 and advertised UTC offsets; it does not claim a safe timezone-only setter. The
 camera's original local clock and settings were restored after this investigation.
+
+## Send audio to the speaker
+
+The updated library has not been published to PyPI. Install the review branch
+with its optional codec dependency:
+
+```shell
+python -m pip install "mipc-camera-client[audio] @ git+https://github.com/brylee123/mipc-camera-client-python.git@feature/android-audio"
+```
+
+After login:
+
+```python
+from pathlib import Path
+
+# Raw signed PCM16 little-endian, mono, 16000 Hz; with no fixed duration cap.
+result = camera.send_audio(Path("announcement.pcm").read_bytes())
+print(result.duration)
+```
+
+This publishes AAC over RTMP directly to the configured camera. It uses the
+existing speaker volume, does not unmute the camera microphone, and never retries
+failed audio. Pass a `threading.Event` as `stop_event` to stop an upload. This
+synchronous call locks its client until completion; pass an iterable of PCM chunks
+for incremental input and use a separate client for
+concurrent controls. Completion confirms transport, not audibility on every model.
+The tested f300 produced a matching AAC test tone in an authorized acoustic
+loopback check. See [Android evidence and limits](docs/ANDROID.md).
+
+Android inspection also added explicit read helpers `get_external_switch_enabled`,
+`get_sleep_config` and `get_crop_zoom`. On the tested f300 only the external-switch
+flag was readable; its physical meaning is unverified. Sleep/crop reads returned
+HTTP 404 and are not advertised as supported controls on that camera.

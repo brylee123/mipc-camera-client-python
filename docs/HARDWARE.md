@@ -67,7 +67,7 @@ The test returned changed brightness and motor position to their starting values
 
 ## Still unverified
 
-Settings persistence across power cycles; broad setting-value combinations; storage maintenance; firmware updates; reboot/restore; password changes; pairing/external accessories; gateway/box operations; actual recording to media and recorded-video playback; talk audio upload; RTSP; and compatibility with other models or firmware. Readable cruise/schedule/scene documents do not establish support for their associated actions.
+Settings persistence across power cycles; broad setting-value combinations; storage maintenance; firmware updates; reboot/restore; password changes; pairing/external accessories; gateway/box operations; actual recording to media and recorded-video playback; other-model talk audio; RTSP; and compatibility with other models or firmware. Readable cruise/schedule/scene documents do not establish support for their associated actions.
 
 The tests checked direct local operation. They did not establish that the camera firmware makes no independent external connections. The Windows application was used for identifying the device and reading connection details; library RPCs and media decoding targeted the local camera.
 
@@ -96,3 +96,20 @@ The device advertises p0=HD1080p, p1=D1 and p2=CIF. Local H.264 frames decoded a
 for p0 and p2. The server sometimes returned a p2 URL for a p1 request; opening
 streams rapidly could also fail transiently. Advertised labels and the Windows
 client's static 1280×720/640×360/320×180/160×90 mapping are not reliable measurements.
+
+
+## Android and speaker follow-up (2026-10-30)
+
+The vendor-served Android MIPC APK was statically inspected. Local RTMP talk
+publishing was tested with several codecs. An authorized, temporary microphone
+loopback detected a transmitted AAC 1320 Hz tone strongly in the returned audio;
+no ambient audio was saved, and microphone mute was restored. The resulting
+optional sender uses mono 16 kHz AAC and supports interruptible uploads without a fixed duration cap. Packet
+acceptance alone does not establish audible support for the other codecs. See
+[Android findings](ANDROID.md) for exact provenance, new request shapes and the
+talk-resource reservation behavior.
+
+Read-only probes: `ccm_exsw_get` returns a boolean-like flag; `ccm_sleep_get` and
+`ccm_crop_zoom_get` return HTTP 404 on this f300. `ccm_cap_get` did not return the
+expected acknowledgement. Preset, voice-alarm, external-switch writes and sleep /
+crop writes were not activated. These remain capability-gated protocol findings.

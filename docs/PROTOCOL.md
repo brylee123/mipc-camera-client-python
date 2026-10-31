@@ -1,8 +1,8 @@
-# Windows client protocol inventory
+# Client protocol inventory
 
 Static analysis of the application installed at `C:\Users\bryle\MIPC` on 2026-10-29. No executable, plugin, script, cookies, debug logs, camera recordings, credentials, or account IDs are redistributed.
 
-81 observed RPC names, including 72 device RPCs. All device RPCs are available through `client.call(name, **fields)` at the explicitly configured host. Account operations are documented for completeness and excluded from that interface. Login/DH use the pre-existing local authentication implementation.
+The combined catalogue contains 89 observed RPC names, including 80 device/queue RPCs. The Windows baseline below contains 81 names; [Android inspection](ANDROID.md) adds eight confirmed call sites and an alternate talk request field. All device RPCs are available through `client.call(name, **fields)` at the explicitly configured host. Account operations are documented for completeness and excluded from that interface. Login/DH use the pre-existing local authentication implementation.
 
 ## Evidence
 
@@ -111,7 +111,7 @@ Offsets below count Unicode characters in the decompressed UTF-8 bundle. Their p
 Five catalog entries are local authentication operations (DH, login, logout, session check, password change); four are account registration/binding/query/recovery operations. Authentication has dedicated methods. `call()` excludes both categories so device inputs cannot replace authentication/session material.
 
 * Client call-site evidence is not hardware validation. A later f300 read-only test verified a subset of operations; see [HARDWARE.md](HARDWARE.md). The inventory does not imply support for every endpoint on every device.
-* Stream/playback/talk methods negotiate URLs only. RTMP/RTSP availability is firmware-dependent; no claim is made that every camera supports RTSP. Native plugin audio capture, encoding, playback, and clip export are not reimplemented. Event queues expose explicit synchronous polling, without a background listener.
+* Stream/playback/talk methods negotiate URLs only. RTMP/RTSP availability is firmware-dependent; no claim is made that every camera supports RTSP. Native plugin audio capture, playback, and clip export are not reimplemented. Optional `send_audio()` now provides bounded AAC encoding and local speaker publishing; see [Android/audio evidence](ANDROID.md). Event queues expose explicit synchronous polling, without a background listener.
 * Cloud login/registration/recovery/binding/device discovery are not required for direct local access and are not implemented. Gateway/box/external-device endpoints still require compatible hardware at the configured host.
 * Explicit NTP, firmware checks/downloads, alert actions and network settings can cause the camera itself to contact other hosts. The library cannot guarantee that firmware remains offline; use network rules if complete isolation is required.
 * Firmware enum meanings and unobserved response fields are returned without guessed conversions. Advanced callers can use `call` with the catalog field names; convenience document updates preserve firmware extension fields.

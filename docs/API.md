@@ -435,3 +435,20 @@ mode is exposed.
 `get_box_recordings` / `set_box_recordings` target a separately addressed MIPC
 recording box/gateway. They are distinct from the camera's continuous or scheduled
 SD recording and are not claimed to work without that separate hardware.
+
+## Android reads and speaker uploads
+
+- `send_audio(pcm: bytes, token="p0", *, timeout=10, stop_event=None) -> AudioSendResult`:
+  send with no fixed duration cap of signed PCM16 little-endian mono 16000 Hz audio as
+  AAC/RTMP. Requires the optional `[audio]` extra. Timeout is a finite positive
+  network-operation bound up to 30 seconds; audio is paced separately in real
+  time. `stop_event` is an optional `threading.Event`. The result reports
+  `samples_sent`, `sample_rate`, `duration` and `cancelled`. A few encoder-buffered
+  samples may finish during stop; failed transmissions are never retried.
+- `get_external_switch_enabled() -> bool`: validate and return the camera's
+  `ccm_exsw_get` flag. Do not infer physical accessory behavior from this flag.
+- `get_sleep_config() -> dict`: read `ccm_sleep_get` where implemented.
+- `get_crop_zoom(token="vs0") -> dict`: read `ccm_crop_zoom_get` without assuming
+  coordinate units or write support.
+
+[Android inspection](ANDROID.md) records exact provenance and hardware limits.

@@ -29,6 +29,33 @@ def ack(method, **data):
     }
 
 
+@pytest.mark.parametrize("value", [0, 1, False, True])
+def test_android_external_switch_flag_is_typed(client, value):
+    client.run_rpc = Mock(return_value=ack("ccm_exsw_get", enable=value))
+    assert client.get_external_switch_enabled() is bool(value)
+
+
+@pytest.mark.parametrize("value", [None, "1", 2, []])
+def test_android_external_switch_rejects_unknown_values(client, value):
+    client.run_rpc = Mock(return_value=ack("ccm_exsw_get", enable=value))
+    with pytest.raises(MipcProtocolError):
+        client.get_external_switch_enabled()
+
+
+def test_android_read_helpers_and_literal_talk_field(client):
+    client.run_rpc = Mock(
+        side_effect=[
+            ack("ccm_sleep_get", sleep_enable=1),
+            ack("ccm_crop_zoom_get", crop_zoom_conf={"x": 1}),
+            ack("ccm_talk", uri={"url": "rtmp://192.0.2.10/talk"}),
+        ]
+    )
+    assert client.get_sleep_config()["sleep_enable"] == 1
+    assert client.get_crop_zoom()["crop_zoom_conf"] == {"x": 1}
+    client.call("ccm_talk", setup={"trans": {"proto": "rtmp"}}, slient=1)
+    assert client.run_rpc.call_args.args[1]["dslient"] == 1
+
+
 def test_alert_actions_updates_each_token_as_object_before_arming(client):
     actions = [{"token": "motion", "enable": 1}, {"token": "input", "enable": 0}]
     client.call = Mock()

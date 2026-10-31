@@ -26,7 +26,7 @@ with MipcCameraClient("192.168.1.50:80", timeout=10) as camera:
     print(camera.get_stream_url())  # URL negotiation only; caller owns playback
 ```
 
-Construction does not contact anything. Login uses the existing MIPC DH/DES protocol at the supplied host. Each operation stays at that host, ignores environment proxies and .netrc, rejects HTTP redirects, and has a bounded timeout. There is no automatic login retry or cloud fallback. The legacy protocol uses HTTP and legacy cryptography; it does not provide modern transport security.
+Construction does not contact anything. Login uses the existing MIPC DH/DES protocol at the supplied host. Each operation stays at that host, ignores environment proxies and .netrc, rejects HTTP redirects, and has a bounded timeout. There is no automatic login retry or cloud fallback. Expired sessions, including the f300 `Receiver / InvalidSession` response, raise `MipcAuthenticationError`. Callers can renew authentication and retry reads once; the library never automatically replays settings writes, movement or maintenance commands. The legacy protocol uses HTTP and legacy cryptography; it does not provide modern transport security.
 
 The hardware-tested f300 uses its device serial as the local login name and its separate Device/Admin PW. For that model, use `camera.login(camera.get_device_sn(), device_password)`. MIPC cloud account credentials do not authenticate the local camera. Other firmware may use a different local username.
 

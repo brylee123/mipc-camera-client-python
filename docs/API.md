@@ -359,3 +359,15 @@ Normalize the locally observed `alert` / `motion_alert` pulse into an immutable
 `serial_number`, `message_id`, and Unix-seconds `timestamp`. Unknown event codes,
 missing identifiers and malformed values return `None`. No property content is
 evaluated. This is a pulse, not a motion-on / motion-off state.
+
+### `get_stream_profiles() -> list[StreamProfile]`
+
+Read firmware-advertised p0–p3 properties. Return token/name metadata; absent,
+malformed or conflicting profile declarations are omitted. No guessed profiles.
+
+### `probe_stream_profiles(decoder) -> list[StreamProfile]`
+
+Decode advertised streams through a caller-supplied `decoder(local_url)` callback
+returning a width/height pair. Successful profiles include measured dimensions.
+Failed probes retain unknown dimensions. Authentication failures propagate. The
+callback must bound network/decode time; no encoder configuration is changed.

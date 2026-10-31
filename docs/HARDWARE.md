@@ -88,3 +88,11 @@ The tests checked direct local operation. They did not establish that the camera
 - Both short empty polls and event delivery worked. Longer runs eventually
   hit an HTTP timeout with queue lifetimes of 30 and 300 seconds. The SDK surfaces
   the error; listeners must recreate their dedicated session/queue with backoff.
+
+### Video quality profiles (2026-10-30)
+
+The device advertises p0=HD1080p, p1=D1 and p2=CIF. Local H.264 frames decoded at
+1920×1080 for p0 and 640×360 for p1 and p2. A 25-frame run confirmed stable sizes
+for p0 and p2. The server sometimes returned a p2 URL for a p1 request; opening
+streams rapidly could also fail transiently. Advertised labels and the Windows
+client's static 1280×720/640×360/320×180/160×90 mapping are not reliable measurements.

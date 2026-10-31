@@ -128,3 +128,21 @@ Tests cover upstream crypto vectors, request encoding, all catalog device dispat
 The original library was created by [Pan Maruda (pan-maruda)](https://github.com/pan-maruda) in [mipc-camera-client-python](https://github.com/pan-maruda/mipc-camera-client-python). Their reverse-engineered local authentication, snapshot, streaming and pan/tilt implementation forms the foundation of this fork.
 
 This fork adds the expanded device API, protocol inventory and hardware validation. The original copyright notice and BSD-3-Clause license are preserved in [LICENSE](LICENSE).
+
+## Video quality profiles
+
+`get_stream_profiles()` returns immutable `StreamProfile` objects with the
+advertised playback `token` and firmware `name`. A name such as D1 or CIF does
+**not** establish its resolution. `width` and `height` remain `None` until measured.
+
+`probe_stream_profiles(decoder)` negotiates each advertised stream at the local
+camera and supplies its private URL to your bounded decoder callback. Return
+`(frame.width, frame.height)` from a decoded frame. The SDK has no media-decoder
+dependency; the caller provides one. Failed probes retain unknown dimensions;
+authentication errors propagate. Keep URLs private and bound connection/read times.
+
+On the tested f300, p0 decoded at 1920×1080. Both p1 (advertised D1) and p2
+(advertised CIF) decoded at 640×360; the server sometimes returned a p2 media path
+for a p1 request. The Windows client sends these same tokens but contains static
+resolution assumptions. Do not convert its labels into assumed frame sizes.
+Selecting a profile changes playback negotiation, not the camera encoder settings.

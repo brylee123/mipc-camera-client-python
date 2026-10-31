@@ -260,7 +260,7 @@ Explicit operation; see the protocol inventory for request fields.
 
 ### `set_date(self, utc_date: 'dict', *, timezone: 'str | int | None' = None, type: 'str | int | None' = None, daylight_savings: 'int | None' = None) -> 'None'`
 
-Send the camera's structured UTC date/time, without host clock changes.
+Send the structured camera clock document named `utc_date` on the wire. Firmware timezone/NTP behavior varies; this is an explicit raw clock-setting operation, not a verified timezone-only workflow. It never changes the host computer's clock.
 
 ### `set_flip(self, enabled: bool) -> None`
 
@@ -371,3 +371,67 @@ Decode advertised streams through a caller-supplied `decoder(local_url)` callbac
 returning a width/height pair. Successful profiles include measured dimensions.
 Failed probes retain unknown dimensions. Authentication failures propagate. The
 callback must bound network/decode time; no encoder configuration is changed.
+
+## Explicit device settings
+
+- `get_network_interfaces() -> tuple[NetworkInterface, ...]` reads each interface's
+  token, connection type, enabled flag, link status, MAC and IPv4 address. This
+  view excludes Wi-Fi keys, SSIDs and nearby APs; `get_network()` remains the raw
+  sensitive document. Both interfaces may be up. A working link is not proof of
+  the active/default route or internet access.
+- `set_power_frequency(hertz)` accepts integer 50 or 60. The extracted **MIPC** UI
+  uses enum 0 for 60 Hz and 1 for 50 Hz. Its Vimtag OEM UI reverses the displayed
+  order; cross-model/OEM behavior still needs validation. `update_misc(power_freq=...)`
+  remains the raw enum API. Verified both enum readbacks on f300.
+- `get_timezones() -> tuple[str, ...]` returns unique advertised UTC offsets from
+  `ccm_zone_get.address.zones[].utc`, matching the extracted Windows UI option
+  values. City names and zoneinfo file paths are metadata, not proven setter IDs.
+  `get_ntp()["timezone"]` exposes the firmware's reported setting, which can still
+  contain a legacy city label.
+- No high-level timezone setter is offered: f300 tests found successful readback
+  could accompany an incorrect clock shift. `set_date` / `set_ntp` remain explicit
+  advanced APIs. Their raw calls are not a verified timezone-only workflow. Do
+  not replay a cached clock or assume `utc_date` behaves uniformly across firmware.
+- `get_recording_mode()` returns `off`, `continuous`, `scheduled`, or `None` for an
+  unrecognized schema. `set_recording_mode(mode)` preserves task retention and
+  schedule fields. Scheduled mode needs existing nonempty time windows. This is
+  **local SD task recording**, requiring usable storage to produce footage.
+- `set_recording_enabled(bool)` is retained for compatibility: it only changes the
+  SD task's enable flag. It does not choose continuous mode.
+- `set_motion_alarm_enabled(bool)` changes only the observed `motion_alert` action's
+  enable flag. It preserves global arming, other actions and all output settings.
+  Motion notifications require global arming as well as the motion action.
+- `set_alarm_armed(bool)` explicitly changes global arming. Existing actions can
+  activate IO outputs, snapshots and recording; it does not make those outputs safe.
+- `reboot()` and `restore(keep_configuration=False)` already provide restart and
+  factory reset. Factory reset can erase credentials/networking and was **not**
+  executed during validation. No maintenance action is called automatically.
+
+### OSD fields verified independently
+
+```python
+camera.update_osd(week=1)  # weekday
+camera.update_osd(date={"date_enable": 1})  # calendar date
+camera.update_osd(date={"time_enable": 1})  # clock time
+camera.update_osd(date={"format": "MM-DD-YYYY"})  # also YYYY-MM-DD
+camera.update_osd(date={"enable_12h": 1})  # 0 for 24-hour
+```
+
+Live f300 snapshots confirmed each flag independently; original settings were
+restored. Other OEM date formats are not assumed supported.
+
+### Playback labels and recording boxes
+
+Windows client handlers map **HD** to p0, **Standard** to p1, and **Smooth** to p2.
+The top label follows the device's advertised quality (HD1080p on the test f300).
+D1 and CIF are firmware labels, not trustworthy resolution claims. Decode frames
+for dimensions: the test camera yielded p0 1920×1080 and p1/p2 both 640×360.
+Different profiles may still use different frame rates or bitrates.
+
+The extracted **Auto** handler only changes the client label; it neither changes
+`PlayProfile` nor sends a different camera token. No fictitious automatic camera
+mode is exposed.
+
+`get_box_recordings` / `set_box_recordings` target a separately addressed MIPC
+recording box/gateway. They are distinct from the camera's continuous or scheduled
+SD recording and are not claimed to work without that separate hardware.

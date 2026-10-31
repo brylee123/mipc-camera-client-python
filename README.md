@@ -30,6 +30,40 @@ Construction does not contact anything. Login uses the existing MIPC DH/DES prot
 
 The hardware-tested f300 uses its device serial as the local login name and its separate Device/Admin PW. For that model, use `camera.login(camera.get_device_sn(), device_password)`. MIPC cloud account credentials do not authenticate the local camera. Other firmware may use a different local username.
 
+## Security: keep camera traffic local
+
+For better privacy, block the camera's internet access at your router or firewall
+while allowing your local client to reach it. The library uses the configured
+camera host, but it cannot prevent the camera firmware from independently
+contacting vendor services. Network restrictions reduce that exposure; they do
+not make the camera firmware trusted.
+
+1. Reserve the camera's LAN address in your router's DHCP settings.
+2. Deny the camera's outbound internet (WAN) traffic across all protocols and
+   ports, covering **both IPv4 and IPv6** if enabled. Blocking DNS or vendor
+   domains alone is insufficient.
+3. Preserve local access from your client or Home Assistant to the camera's
+   control and media services, including return traffic. A generic **Block device**
+   option or guest-network isolation may also block LAN access. With a separate
+   camera/IoT network, allow the required traffic between networks explicitly.
+4. Restrict every connected interface: Ethernet and Wi-Fi can both be active with
+   different addresses. Block both or disconnect the unused interface. Do not
+   forward camera ports from the internet; remove existing camera port forwards
+   or UPnP mappings.
+5. Verify enforcement of the WAN block, restart the camera, and check local
+   snapshots, streaming, controls and events on your model.
+
+Vendor cloud viewing, notifications, updates and internet time synchronization
+may stop working. A trusted local time server can be used where supported, with
+the necessary local access allowed. Keep the camera clock correct when consuming
+timestamped events. Your client computer or Home Assistant can retain internet
+access for dependency installation and updates.
+
+Local operations have been tested, but hardware validation with camera WAN access
+blocked is **still outstanding**. The camera protocol uses HTTP and legacy
+cryptography; limit LAN access to trusted devices, ideally using a separate
+camera/IoT network. Internet blocking does not add transport encryption.
+
 ## Settings and controls
 
 ```python
@@ -146,3 +180,22 @@ On the tested f300, p0 decoded at 1920×1080. Both p1 (advertised D1) and p2
 for a p1 request. The Windows client sends these same tokens but contains static
 resolution assumptions. Do not convert its labels into assumed frame sizes.
 Selecting a profile changes playback negotiation, not the camera encoder settings.
+
+## Clear device controls
+
+The [device settings reference](docs/API.md#explicit-device-settings) covers
+credential-free interface/IP/MAC views, camera-advertised timezone metadata, OSD weekday /
+calendar date / clock time and formats, MIPC power frequency, explicit SD recording
+modes and separate motion-action/global-arming controls. All changes stay at the
+configured camera host and preserve unrelated document fields. Restart and factory
+reset are explicit maintenance calls; factory reset has not been live-tested.
+
+**Continuous recording** means all-day recording to the camera's local SD storage.
+**Scheduled recording** uses configured time windows. **Recording box** APIs address
+separate MIPC storage hardware. The compatibility method `set_recording_enabled`
+only enables the existing SD task; use `set_recording_mode` to choose the mode.
+
+Timezone editing remains an open hardware issue: the tested f300 can acknowledge
+an update while shifting its clock incorrectly. The library reports the setting
+and advertised UTC offsets; it does not claim a safe timezone-only setter. The
+camera's original local clock and settings were restored after this investigation.

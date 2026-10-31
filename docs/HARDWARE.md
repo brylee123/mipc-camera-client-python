@@ -70,3 +70,21 @@ The test returned changed brightness and motor position to their starting values
 Settings persistence across power cycles; broad setting-value combinations; storage maintenance; firmware updates; reboot/restore; password changes; pairing/external accessories; gateway/box operations; actual recording to media and recorded-video playback; talk audio upload; RTSP; and compatibility with other models or firmware. Readable cruise/schedule/scene documents do not establish support for their associated actions.
 
 The tests checked direct local operation. They did not establish that the camera firmware makes no independent external connections. The Windows application was used for identifying the device and reading connection details; library RPCs and media decoding targeted the local camera.
+
+### Local motion events (2026-10-30)
+
+- The f300 emitted a local `ccm_msg` item with `type: "alert"`,
+  `code: "motion_alert"`, positive integer `msg_id`, device `sn`, Unix-seconds
+  `date`, and `p: [{n: "msg_id", v: "..."}]`. Pan movement changed the view;
+  physical movement and other models remain unverified. No clear-state event
+  was observed. Device-info messages arrived on the same queue.
+- Tested with global arming enabled and only the motion action enabled; IO,
+  snapshot and recording outputs were disabled and read back before arming.
+  Original alarm actions and global state were restored and verified afterward.
+- Sending an action array only changed its first element on this firmware. The
+  Windows UI sends a single action object, keyed by its token. The public list
+  setter now issues one request per action, then sets global arming; it is not
+  atomic and never retries writes.
+- Both short empty polls and event delivery worked. Longer runs eventually
+  hit an HTTP timeout with queue lifetimes of 30 and 300 seconds. The SDK surfaces
+  the error; listeners must recreate their dedicated session/queue with backoff.

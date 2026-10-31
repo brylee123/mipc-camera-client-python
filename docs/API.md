@@ -252,7 +252,7 @@ Low-level request to this host only; data must already be flattened.
 
 ### `set_alert_actions(self, *, enabled: 'bool', actions: 'list[dict]') -> 'None'`
 
-Replace actions explicitly; call get_alert_actions() before editing.
+Update supplied actions by token, one action object per request, then set global arming. An empty list changes arming only. Omitted actions are preserved. Updates are sequential and can partially complete on failure; read before editing and verify afterward.
 
 ### `set_box_recordings(self, box_serial: 'str', device_serial: 'str', command: 'str', *, start_time: 'int' = 0, end_time: 'int' = 0) -> 'None'`
 
@@ -352,3 +352,10 @@ Explicit operation; see the protocol inventory for request fields.
 ### `update_recording(self, changes: 'Mapping[str, Any]') -> 'None'`
 
 Merge task fields while retaining schedules and retention settings.
+
+### `mipc_camera_client.events.MotionEvent.from_message(item) -> MotionEvent | None`
+
+Normalize the locally observed `alert` / `motion_alert` pulse into an immutable
+`serial_number`, `message_id`, and Unix-seconds `timestamp`. Unknown event codes,
+missing identifiers and malformed values return `None`. No property content is
+evaluated. This is a pulse, not a motion-on / motion-off state.
